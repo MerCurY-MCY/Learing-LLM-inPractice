@@ -24,11 +24,13 @@
 
 ## References
 
+
+### GitHub Repositories
+
+1. https://github.com/firechecking/CleanTransformer
 ### Academic Papers
 
 1. Mikolov, T., Chen, K., Corrado, G., & Dean, J. (2013). Efficient estimation of word representations in vector space. arXiv preprint arXiv:1301.3781.
 
 
-### GitHub Repositories
 
-1. https://github.com/firechecking/CleanTransformer
