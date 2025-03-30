@@ -1,40 +1,31 @@
 # Reproduce-classicLLM
 
-## Repository Introduction
+## Introduction
 
-This repository is dedicated to reproducing classic Language Learning Models (LLMs). The goal is to provide implementations, explanations, and comparisons of fundamental models that have shaped the field of natural language processing and artificial intelligence.
+本仓库主要用于学习LLM知识以及锻炼编程能力，欢迎有志于学习大模型知识的朋友们follow，共同学习交流，一起进步。
 
-By recreating these models, we aim to gain deeper insights into their architecture, training methodologies, and performance characteristics. This project serves as both an educational resource and a practical reference for researchers and developers interested in understanding the evolution of LLMs.
+预计将会**从头复现GPT、Bert两个经典的LLM模型**，并在**本地机器消费卡上进行训练和推理**。同时，会将所有代码涉及到的**经典论文详细解读**同步上传，在实践中**学习LLM领域的基础知识**。
+
+预计将实现1.BPE、WordPiece分词模型；2.LayerNorm、MultiHeadAttention、TransformerBlock；3.完整的Bert和GPT1/2分词器、模型搭建，并加载完成推理；4.MSELoss、CrossEntropy等Loss，SGD、AdamW等Optimizer，并训练一个自己的小型类ChatGPT模型；5.Linux多进程、Pytorch分布式通信以及混合精度和分布式训练；6.全功能trainer开发。
+
 
 ## Todo List
 
-- [ ] Set up basic project structure and dependencies
-- [ ] Implement Transformer architecture (Vaswani et al., 2017)
-- [ ] Reproduce BERT model architecture
-- [ ] Implement GPT model family (GPT-1, GPT-2)
-- [ ] Add training scripts with configurable hyperparameters
-- [ ] Create evaluation framework for comparing model performance
-- [ ] Add comprehensive documentation and explanations for each model
-- [ ] Include visualization tools for model internals
-- [ ] Add examples of fine-tuning on downstream tasks
-- [ ] Create comparison benchmarks against original implementations
+- [ ] 分词模型
+- [ ] LayerNorm、MultiHeadAttention、TransformerBlock（自注意力中的核心木块哦）
+- [ ] Bert以及GPT1/2结构搭建
+- [ ] 类ChatGPT模型训练
+- [ ] 混合精度和分布式训练
+- [ ] 全功能trainer开发
+
 
 ## References
 
 ### Academic Papers
 
-1. Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, L., & Polosukhin, I. (2017). Attention is All You Need. In Advances in Neural Information Processing Systems.
-2. Devlin, J., Chang, M. W., Lee, K., & Toutanova, K. (2018). BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding.
-3. Radford, A., Wu, J., Child, R., Luan, D., Amodei, D., & Sutskever, I. (2019). Language Models are Unsupervised Multitask Learners.
+1. Mikolov, T., Chen, K., Corrado, G., & Dean, J. (2013). Efficient estimation of word representations in vector space. arXiv preprint arXiv:1301.3781.
+
 
 ### GitHub Repositories
 
-1. [Hugging Face Transformers](https://github.com/huggingface/transformers)
-2. [OpenAI GPT-2](https://github.com/openai/gpt-2)
-3. [Google BERT](https://github.com/google-research/bert)
-
-### Additional Resources
-
-1. [The Illustrated Transformer](http://jalammar.github.io/illustrated-transformer/)
-2. [The Illustrated BERT](http://jalammar.github.io/illustrated-bert/)
-3. [Andrej Karpathy's blog on transformers](https://karpathy.github.io/2023/05/31/llm-neurips-experiments/)
+1. https://github.com/firechecking/CleanTransformer
