@@ -1,4 +1,4 @@
-# LearningLLM-inPractice
+# LearningLLM-InPractice
 
 
 
