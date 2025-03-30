@@ -1,4 +1,4 @@
-# Learing-classicLLM-inPractice
+# LearningLLM-inPractice
 
 
 
