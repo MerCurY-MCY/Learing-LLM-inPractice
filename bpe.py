@@ -1,0 +1,170 @@
+import re
+import re
+from collections import Counter
+import toolz  # 处理迭代器、字典、列表等数据结构的工具
+
+
+def wordpunct_tokenize(text):
+    # \w匹配Unicode字符     ^\w\s匹配非Unicode字符和非空白字符（标点符号）
+
+    _pattern = r"\w+|[^\w\s]+"
+
+    # 编译为对象   re.MULTILINE表示$和^可以匹配下一行开头和结尾，re.DOTALL表示点号也可以匹配换行符
+    _regexp = re.compile(_pattern, flags=re.UNICODE | re.MULTILINE | re.DOTALL)
+    return _regexp.findall(text)
+
+
+corpus = ["Baby, I don't feel so good",
+          "six words you never understood",
+          "I'll never let you go",
+          "five words you'll never say (aww)",
+          "I laugh along like nothing's wrong",
+          "four days has never felt so long",
+          "If three's a crowd and two was us",
+          "one slipped away (hahahahaha)",
+          "I just wanna make you feel okay",
+          "But all you do is look the other way",
+          "I can't tell you how much I wish I didn't wanna stay",
+          "I just kinda wish you were gay",
+          "Is there a reason we're not through?",
+          "Is there a 12-step just for you?",
+          "Our conversation's all in blue",
+          "11 \"heys\" (Hey, hey, hey, hey)",
+          "Ten fingers tearin' out my hair",
+          "Nine times, you never made it there",
+          "I ate alone at seven, you were six minutes away",
+          "How am I supposed to make you feel okay",
+          "When all you do is walk the other way?",
+          "I can't tell you how much I wish I didn't wanna stay",
+          "I just kinda wish you were gay",
+          "To spare my pride",
+          "To give your lack of interest, an explanation",
+          "Don't say I'm not your type",
+          "Just say that I'm not your preferred sexual orientation",
+          "I'm so selfish",
+          "But you make me feel helpless, yeah",
+          "And I can't stand another day",
+          "Stand another day",
+          "I just wanna make you feel okay",
+          "But all you do is look the other way, hmm",
+          "I can't tell you how much I wish I didn't wanna stay",
+          "I just kinda wish you were gay",
+          "I just kinda wish you were gay",
+          "I just kinda wish you were gay",
+          ]
+
+
+def wordpunct_tokenize(text):
+    _pattern = r"\w+|[^\w\s]+"
+    _regexp = re.compile(_pattern, flags=re.UNICODE | re.MULTILINE | re.DOTALL)
+    return _regexp.findall(text)
+
+
+class BPEtokenizer():
+    special = ['<UKN>', '<END>', '<PAD>', '<MAD>']  # 对序列的特殊填充
+
+    def __init__(self, vocab_size=10000, lowercase=True, basic_tokenizer=wordpunct_tokenize,
+                 unk='<UNK>', sep='<SEP>', pad='<PAD>', cls='<CLS>', mask='<MASK>', user_specials=None):
+        self.vocal_size = vocab_size
+        self.lowercase = lowercase
+        self.tokenizer = basic_tokenizer
+        self.special = [unk, sep, pad, cls, mask]
+
+    def loadAndTransform(self, vocab_fn=None, vocab=None):
+        if vocab:
+            self.vocab = vocab
+        else:
+            self.vocab = [l.strip() for l in open(vocab_fn, 'r')]
+        vocab_len = len(self. vocab)
+        self.voToid = {x: y for x, y in enumerate(self.vocab)}  # 把字符转换为索引
+        self.idTovo = {y: x for x, y in self.voto2d.items()}  # 把索引转换为字符
+
+    def train(self, corpus=list, max_step=10000, out_fn='vocabulary.txt'):
+
+        ######################################### 统计词频################################################
+        if self.lowercase:
+            corpus = [s.lower() for s in corpus]
+
+        # map用于把一个函数依次对一个数据结构中的元素使用，并返回一个迭代器
+        corpus = list(map(self.tokenizer, corpus))
+
+        # 展平该列表
+        corpus = toolz.concat(corpus)
+
+        # 把每个元素转换成元组并加入结尾符，计算每个单词出现的次数。Counter返回一个元素计数的字典。
+        split_corpus = Counter(tuple(word) + ('/w',) for word in corpus)
+
+        # split_corpus = Counter([tuple(word)+ ('<\W>', ) for word in toolz.concat(map(self.tokenizer, corpus))])
+
+        ########################################## 逐步合并高频词为token并生成词表#################################
+        vocab = self._count_vocab(split_corpus)
+
+        for i in range(max_step):
+            split_corpus, vocab_cnt = self._countAndMerge(
+                split_corpus)  # 保留单词结构，统计一个单词内出现的二元字词的词频
+            vocab = self._count_vocab(split_corpus)  # 把单词切碎，只统计字符级别的词频
+            if len(vocab) > self.vocal_size or vocab_cnt < 0:
+                break
+
+        ########## 插入特殊词######################
+        for s in self.special:
+            if s not in vocab:
+                vocab.insert(0, (s, 9999))
+
+        ##### 导出列表#####
+
+        with open(out_fn, 'w') as f:
+            f.write('\n'.join(token for token, _ in vocab))
+
+        self.vocab = [token for token, _ in vocab]
+
+        return vocab
+
+    def _count_vocab(self, split_corpus):
+        _countWord = Counter([data for data in toolz.concat(
+            [w * x for w, x in split_corpus.items()])])  # .items()顺序访问字典中的元素，enumerate访问元组或者列表
+        _sortWord = sorted(_countWord.items(),
+                           key=lambda x: x[1], reverse=True)  # 按第一维度降序排序字符
+        return _sortWord
+
+    def _countAndMerge(self, split_corpus):
+        ngram = 2
+        bigramCounter = Counter()
+
+        for token, count in split_corpus.items():  # 循环扫描每个单词和其出现频率
+            if count < 2:
+                continue  # 跳过小于2的子词
+            # 使用2的滑动窗口在单词上滚动
+            for subwords in toolz.sliding_window(ngram, token):
+                bigramCounter[subwords] += count  # 将每个长度为2的子词的出现次数记录下来
+
+        if len(bigramCounter) > 0:
+            # 找出最大频率的二元子词，max会循环读取可迭代对象，并对每个对象执行key对应的函数，比较函数计算出的值。（对于字典，读出的是键）
+            max_bigram_key = max(bigramCounter, key=bigramCounter.get)
+        else:
+            return split_corpus, -1
+
+        max_bigram_cnt = bigramCounter.get(max_bigram_key)
+
+        list_split_corpus_key = list(split_corpus.keys())
+        for tokens in list_split_corpus_key:
+
+            # jion方法可以把数据结构中的参数合并成字符串，.前面的符号是合并时每个元素间插入的字符
+            temp_tokens = ' '.join(tokens)
+
+            temp_tokens = temp_tokens.replace(' '.join(max_bigram_key), ''.join(
+                max_bigram_key))  # 把原始的token中的分离字符替换为合并在一起的二元高频字符
+
+            # split方法通过括号里的字符把字符串分开，返回一个列表，再转换成元组得到例如(I lo v e) 的形式，其中lo是之前统计得到的高频二元字词
+            new_tokens = tuple(temp_tokens.split(' '))
+
+            # temp_split_corpus = tuple(' '.join(tokens).replace(' '.join(list_split_corpus_key), ''.join(list_split_corpus_key)).split(' '))
+            if new_tokens != tokens:
+                split_corpus[new_tokens] = split_corpus[tokens]
+                split_corpus.pop(tokens)
+        return split_corpus, max_bigram_cnt
+
+
+BPE = BPEtokenizer()
+sequence = BPE.train(corpus=corpus)
+print(sequence)
