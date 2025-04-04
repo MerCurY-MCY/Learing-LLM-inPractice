@@ -122,7 +122,7 @@ class BPETokenizer():
         self.voToid = {x: y for x, y in enumerate(self.vocab)}  # 把字符转换为索引
         self.idTovo = {y: x for x, y in self.voto2d.items()}  # 把索引转换为字符
 
-    def train(self, corpus: list, max_step=10000, out_fn='./BPE/BPEvocabulary.txt'):
+    def train(self, corpus: list, max_step=10000, out_fn='./tokenizer/BPEvocabulary.txt'):
 
         ######################################### 统计词频################################################
         if self.lowercase:
@@ -283,27 +283,37 @@ class WordtoPieceTokenizer(BPETokenizer):
 
         if len(bigram_cnt) > 0:
             max_token = max(bigram_cnt, key=lambda x: bigram_cnt.get(
-                x)/unigram_cnt.get(x[0])*unigram_cnt.get(x[1]))
+                x)/(unigram_cnt.get(x[0]) * unigram_cnt.get(x[1])))
             max_token_cnt = bigram_cnt[max_token]
         else:
             return split_corpus, -1
 
-        for words, _ in split_corpus.items():
+        list_split_corpus = list(split_corpus.keys())  # 列表化后才能才循环里改字典的键
+        for words in list_split_corpus:
             new_words = tuple(' '.join(words).replace(
-                ' '.join(max_token), ''.join(max_token)).split())
+                ' '.join(max_token), ''.join(max_token)).split(' '))  # split方法指定分割符并以分隔部分为元素返回列表
             if words != new_words:
                 split_corpus[new_words] = split_corpus[words]
-                split_corpus.pop(new_words)
+                split_corpus.pop(words)
 
         return split_corpus, max_token_cnt
 
 
 BPE = BPETokenizer()
-vocab = BPE.train(corpus=corpus)
-print(vocab)
+BPE_vocab = BPE.train(corpus=corpus)
+print(f'BPE_vocab:{BPE_vocab}')
+BPE_output_tokens = BPE.tokenize(test_text)
+print(f'BPE_output_tokens:{BPE_output_tokens}')
+with open('./tokenizer/BPE_output.txt', 'w') as f:
+    f.write('\n'.join(BPE_output_tokens))
 
 
-output_tokens = BPE.tokenize(test_text)
-print(output_tokens)
-with open('./BPE/output_tokens.txt', 'w') as f:
-    f.write('\n'.join(output_tokens))
+WordtoPiece = WordtoPieceTokenizer()
+WordtoPiece_vocab = WordtoPiece.train(
+    corpus=corpus, out_fn='./tokenizer/WordtoPiece_vocab.txt')
+print(f'WordtoPiece_vocab:\n{WordtoPiece_vocab}')
+
+wordtoPiece_output = WordtoPiece.tokenize(test_text)
+print(f'wordtoPiece_output:\n{wordtoPiece_output}')
+with open('./tokenizer/WordtoPiece_output.txt', 'w') as f:
+    f.write('\n'.join(wordtoPiece_output))
