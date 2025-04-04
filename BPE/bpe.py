@@ -52,9 +52,58 @@ corpus = ["Baby, I don't feel so good",
           "I just kinda wish you were gay",
           "I just kinda wish you were gay",
           ]
+test_text = [
+    'White shirt now red, my bloody nose',
+    'Sleepin\', you\'re on your tippy toes',
+    'Creepin\' around like no one knows',
+    'Think you\'re so criminal',
+    'Bruises on both my knees for you',
+    'Don\'t say thank you or please',
+    'I do what I want when I\'m wanting to',
+    'My soul so cynical',
+    'So you\'re a tough guy',
+    'Like it really rough guy',
+    'Just can\'t get enough guy',
+    'Chest always so puffed guy',
+    'I\'m that bad type',
+    'Make your mama sad type',
+    'Make your girlfriend mad type',
+    'Might seduce your dad type',
+    'I\'m the bad guy, duh',
+    'I\'m the bad guy',
+    'I like it when you take control',
+    'Even if you know that you don\'t own me',
+    'I\'ll let you play the role',
+    'I\'ll be your animal',
+    'My mommy likes to sing along with me',
+    'But she won\'t sing this song',
+    'If she reads all the lyrics',
+    'She\'ll pity the men I know',
+    'So you\'re a tough guy',
+    'Like it really rough guy',
+    'Just can\'t get enough guy',
+    'Chest always so puffed guy',
+    'I\'m that bad type',
+    'Make your mama sad type',
+    'Make your girlfriend mad type',
+    'Might seduce your dad type',
+    'I\'m the bad guy, duh',
+    'I\'m the bad guy',
+    'Duh',
+    'I\'m only good at bein\' bad, bad',
+    'I like when you get mad',
+    'I guess I\'m pretty glad that you\'re alone',
+    'You said she\'s scared of me?',
+    'I mean, I don\'t see what she sees',
+    'But maybe it\'s \'cause I\'m wearing your cologne',
+    'I\'m the bad guy',
+    'I\'m the bad guy',
+    'Bad guy, bad guy',
+    'I\'m the bad'
+]
 
 
-class BPEtokenizer():
+class BPETokenizer():
     special = ['<UKN>', '<END>', '<PAD>', '<MAD>']  # 对序列的特殊填充
 
     def __init__(self, vocab_size=10000, lowercase=True, basic_tokenizer=wordpunct_tokenize, user_specials=None):
@@ -73,7 +122,7 @@ class BPEtokenizer():
         self.voToid = {x: y for x, y in enumerate(self.vocab)}  # 把字符转换为索引
         self.idTovo = {y: x for x, y in self.voto2d.items()}  # 把索引转换为字符
 
-    def train(self, corpus: list, max_step=10000, out_fn='./BPE/vocabulary.txt'):
+    def train(self, corpus: list, max_step=10000, out_fn='./BPE/BPEvocabulary.txt'):
 
         ######################################### 统计词频################################################
         if self.lowercase:
@@ -171,7 +220,7 @@ class BPEtokenizer():
         for tokens in split_text:
 
             tokens = list(tokens)  # 把词列表化以使用切片操作
-            print(tokens)
+
             if pre:
                 tokens = [pre] + tokens
             if post:
@@ -181,7 +230,7 @@ class BPEtokenizer():
             ######################### 贪心算法匹配序列里的词是否在训练出的词表里，从而把序列分割成token############
             while begin < end:
                 sub_token = ''.join(tokens[begin:end])
-                if begin > 0 and mid:
+                if begin > 0 and mid:  # 为了区分词和词之间的分隔，可以在每个词初步分词后添加结束符号。也可以在分成token后在前方添加##等
                     sub_token = mid + sub_token
                 if begin > 0 and sub_token in self.vocab:  # 如果切片到的词在词表里，就存入token列表并把begin指针移动到end处，让end指向序列尾
                     all_tokens.append(sub_token)
@@ -219,58 +268,40 @@ class BPEtokenizer():
         return text
 
 
-BPE = BPEtokenizer()
+class WordtoPieceTokenizer(BPETokenizer):
+    def _countAndMerge(self, split_corpus: dict):
+        ngram = 2
+        bigram_cnt = Counter()
+        unigram_cnt = Counter()
+
+        for words, cnt in split_corpus.items():
+            for token in words:
+                unigram_cnt[token] += cnt
+            # toolz.sliding_window 在任何序列上滑动时，返回的每个窗口都是元组。
+            for token in toolz.sliding_window(ngram, words):
+                bigram_cnt[token] += cnt
+
+        if len(bigram_cnt) > 0:
+            max_token = max(bigram_cnt, key=lambda x: bigram_cnt.get(
+                x)/unigram_cnt.get(x[0])*unigram_cnt.get(x[1]))
+            max_token_cnt = bigram_cnt[max_token]
+        else:
+            return split_corpus, -1
+
+        for words, _ in split_corpus.items():
+            new_words = tuple(' '.join(words).replace(
+                ' '.join(max_token), ''.join(max_token)).split())
+            if words != new_words:
+                split_corpus[new_words] = split_corpus[words]
+                split_corpus.pop(new_words)
+
+        return split_corpus, max_token_cnt
+
+
+BPE = BPETokenizer()
 vocab = BPE.train(corpus=corpus)
 print(vocab)
-test_text = [
-    'White shirt now red, my bloody nose',
-    'Sleepin\', you\'re on your tippy toes',
-    'Creepin\' around like no one knows',
-    'Think you\'re so criminal',
-    'Bruises on both my knees for you',
-    'Don\'t say thank you or please',
-    'I do what I want when I\'m wanting to',
-    'My soul so cynical',
-    'So you\'re a tough guy',
-    'Like it really rough guy',
-    'Just can\'t get enough guy',
-    'Chest always so puffed guy',
-    'I\'m that bad type',
-    'Make your mama sad type',
-    'Make your girlfriend mad type',
-    'Might seduce your dad type',
-    'I\'m the bad guy, duh',
-    'I\'m the bad guy',
-    'I like it when you take control',
-    'Even if you know that you don\'t own me',
-    'I\'ll let you play the role',
-    'I\'ll be your animal',
-    'My mommy likes to sing along with me',
-    'But she won\'t sing this song',
-    'If she reads all the lyrics',
-    'She\'ll pity the men I know',
-    'So you\'re a tough guy',
-    'Like it really rough guy',
-    'Just can\'t get enough guy',
-    'Chest always so puffed guy',
-    'I\'m that bad type',
-    'Make your mama sad type',
-    'Make your girlfriend mad type',
-    'Might seduce your dad type',
-    'I\'m the bad guy, duh',
-    'I\'m the bad guy',
-    'Duh',
-    'I\'m only good at bein\' bad, bad',
-    'I like when you get mad',
-    'I guess I\'m pretty glad that you\'re alone',
-    'You said she\'s scared of me?',
-    'I mean, I don\'t see what she sees',
-    'But maybe it\'s \'cause I\'m wearing your cologne',
-    'I\'m the bad guy',
-    'I\'m the bad guy',
-    'Bad guy, bad guy',
-    'I\'m the bad'
-]
+
 
 output_tokens = BPE.tokenize(test_text)
 print(output_tokens)
