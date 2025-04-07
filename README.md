@@ -14,7 +14,7 @@
 
 ## Todo List
 
-- [ ] 分词模型
+- [x] 分词模型
 - [ ] LayerNorm、MultiHeadAttention、TransformerBlock
 - [ ] Bert以及GPT1/2结构搭建
 - [ ] 类ChatGPT模型训练
