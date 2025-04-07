@@ -15,7 +15,7 @@
 ## Todo List
 
 - [x] 分词模型
-- [ ] LayerNorm、MultiHeadAttention、TransformerBlock
+- [x] LayerNorm、MultiHeadAttention、TransformerBlock
 - [ ] Bert以及GPT1/2结构搭建
 - [ ] 类ChatGPT模型训练
 - [ ] 混合精度和分布式训练
