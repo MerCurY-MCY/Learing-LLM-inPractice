@@ -120,7 +120,7 @@ class BPETokenizer():
             self.vocab = [l.strip() for l in open(vocab_fn, 'r')]
         vocab_len = len(self. vocab)
         self.voToid = {x: y for x, y in enumerate(self.vocab)}  # 把字符转换为索引
-        self.idTovo = {y: x for x, y in self.voto2d.items()}  # 把索引转换为字符
+        self.idTovo = {y: x for x, y in self.voToid.items()}  # 把索引转换为字符
 
     def train(self, corpus: list, max_step=10000, out_fn='./tokenizer/BPEvocabulary.txt'):
 
@@ -248,7 +248,7 @@ class BPETokenizer():
         if token in self. vocab:
             return self.vocab.index(token)
         else:
-            return self.vocab.index(self.unk)
+            return self.vocab.index(self.special['unk'])
 
     def _idtoToken(self, id):
         return self.vocab[id]
