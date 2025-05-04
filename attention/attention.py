@@ -6,7 +6,7 @@ import torch
 def softmax(x):
     max = torch.max(x, dim=-1, keepdim=True).values
     e_x = torch.exp(x - max)
-    softmax_x = e_x/torch.sum(x, dim=-1, keepdim=True)
+    softmax_x = e_x/torch.sum(e_x, dim=-1, keepdim=True)
 
     return softmax_x
 
