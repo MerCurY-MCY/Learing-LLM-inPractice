@@ -113,7 +113,7 @@ class GPTModel(nn.Module):
         self.token_embd = nn.Embedding(config.vocab_size, config.n_embd)
         self.posion_embd = nn.Embedding(config.n_positions, config.n_embd)
         self.drop = nn.Dropout(config.embd_pdropout)
-        nn.ModuleList([TransformerBlock(config, version) for _ in range (config.n_layer)])
+        self.blocks = nn.ModuleList([TransformerBlock(config, version) for _ in range (config.n_layer)])
     
     def forward(self, input_ids, attention_mask = None, head_mask = None, position_ids = None, segment_ids = None, kv_pasts = None):
         input_embds= self.token_embd(input_ids)
@@ -123,6 +123,44 @@ class GPTModel(nn.Module):
             position_ids = attention_mask.long().cumsum(-1) - 1  #long 转为长整形，cumsum对最后一个维度累积求和（指定维度 dim 上的第 i 个元素，得到在该维度上从第0个到第i个元素的和）
             position_ids.masked_fill(attention_mask == 0, 1)  #masked_fill_ 是PyTorch中张量的原地操作，用于将张量中满足条件的元素替换为指定的值。
             position_ids = position_ids[:, -input_embds[1]:]
+        
+        if attention_mask is not None:
+            attention_mask = attention_mask[:, None, None, :]
+            attention_mask = attention_mask.to(dtype = input_embds.dtype)   #dtype获取元素信息，to把attention_mask中的元素转换成浮点型
+            attention_mask = (1.0 - attention_mask) * torch.finfo(attention_mask.dtype).min  #torch.finfo 用于获取某一类变量类型的信息，这里是为填充的序列乘以极小负值
+        
+        if kv_pasts is None:
+            kv_pasts = [None] * len(self.blocks) #创建与层数相等的kv_cache列表数量
+        
+        position_ids = self.posion_embd(position_ids)
+
+        segment_embeds = 0 if segment_ids is None else self.tokens_embed(segment_ids.view(-1, segment_ids.size(-1)))
+
+        hidden_states = self.drop(input_embds + position_ids + segment_embeds)
+
+        for i, block in enumerate(self.blocks):
+            hidden_states, kv_pasts[i] = block(hidden_states, attn_mask = attention_mask, kv_past = kv_pasts[i])
+        
+        return hidden_states, kv_pasts
+
+class GPTLMheadModel(nn.Module):
+    def __init__(self, config, version = 'gpt'):
+        super.__init__()
+        self.config = config
+        self.version = version
+        self.gpt = GPTModel(config, version)
+        self.lm_layer = nn.Linear(config.n_embd, config.vocab_size, bias = False)
+        self._tie_weights()
+    
+    def _tie_weights(self):
+        self.lm_layer.weight = self.gpt.token_embd.weight    #把输入嵌入和输出投影的权重绑定，可以大量节省参数导致的资源消耗，同时可以提升性能
+    
+    def forward(self, input_ids, attn_mask = None, segment_ids=None, head_mask = None, kv_pasts = None):
+        hidden_states = self.gpt(input_ids, attn_mask, segment_ids, head_mask, kv_pasts)
+        lm_logits = self.lm_layer(hidden_states)
+        outputs = (lm_logits, hidden_states)
+        return outputs, kv_pasts
+        
 
 
         
