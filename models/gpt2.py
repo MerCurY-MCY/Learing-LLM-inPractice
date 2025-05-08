@@ -114,6 +114,16 @@ class GPTModel(nn.Module):
         self.posion_embd = nn.Embedding(config.n_positions, config.n_embd)
         self.drop = nn.Dropout(config.embd_pdropout)
         nn.ModuleList([TransformerBlock(config, version) for _ in range (config.n_layer)])
+    
+    def forward(self, input_ids, attention_mask = None, head_mask = None, position_ids = None, segment_ids = None, kv_pasts = None):
+        input_embds= self.token_embd(input_ids)
+
+        if position_ids is None:
+            # attention_mask是对输入序列的填充标注。如果输入序列长度达不到预设的训练长度L，模型会对序列进行填充，并在attention_mask里把填充位置标注为0，原始位置标注为1
+            position_ids = attention_mask.long().cumsum(-1) - 1  #long 转为长整形，cumsum对最后一个维度累积求和（指定维度 dim 上的第 i 个元素，得到在该维度上从第0个到第i个元素的和）
+            position_ids.masked_fill(attention_mask == 0, 1)  #masked_fill_ 是PyTorch中张量的原地操作，用于将张量中满足条件的元素替换为指定的值。
+            position_ids = position_ids[:, -input_embds[1]:]
+
 
         
 
